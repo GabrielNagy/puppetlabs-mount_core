@@ -129,9 +129,12 @@ Puppet::Type.newtype(:mount, self_refresh: true) do
         devices or devices specified by UUID rather than device
         path, depending on the operating system."
 
-    validate do |value|
-      raise Puppet::Error, _('device must not contain whitespace: %{value}') % { value: value } if value =~ %r{\s}
-    end
+#   validate do |value|
+#     raise Puppet::Error, _('device must not contain whitespace: %{value}') % { value: value } if value =~ %r{\s}
+#   end
+ #  munge do |value|
+	#   value.gsub(' ', '\\\040')
+ #  end
   end
 
   # Solaris specifies two devices, not just one.
@@ -246,12 +249,13 @@ Puppet::Type.newtype(:mount, self_refresh: true) do
 
     isnamevar
 
-    validate do |value|
-      raise Puppet::Error, _('name must not contain whitespace: %{value}') % { value: value } if value =~ %r{\s}
-    end
+#   validate do |value|
+#     raise Puppet::Error, _('name must not contain whitespace: %{value}') % { value: value } if value =~ %r{\s}
+#   end
 
     munge do |value|
       value.gsub(%r{^(.+?)/*$}, '\1')
+#	    value.gsub(' ', '\\\040')
     end
   end
 

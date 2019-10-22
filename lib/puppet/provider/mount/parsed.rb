@@ -187,6 +187,11 @@ Puppet::Type.type(:mount).provide(
   else
     record_line name, fields: @fields, separator: %r{\s+}, joiner: "\t", optional: optional_fields, block_eval: :instance do
       def pre_gen(record)
+        require 'pry-byebug'
+        # resource => fstab whitespace munging
+        [:device, :name].each do |param|
+          record[param].gsub!(' ', '\\\040') if record[param].include?(' ')
+        end
         if !record[:options] || record[:options].empty?
           if Facter.value(:kernel) == 'Linux'
             record[:options] = 'defaults'
@@ -208,6 +213,11 @@ Puppet::Type.type(:mount).provide(
       # Eat the trailing slash(es) of mountpoints in fstab
       # This mimics the behavior of munging the resource title
       record[:name].gsub!(%r{^(.+?)/*$}, '\1') unless record[:name].nil?
+
+      # fstab => resource whitespace munging
+      [:device, :name].each do |param|
+        record[param].gsub!('\040', ' ') unless record[param].nil?
+      end
       record[:ensure] = :unmounted if record[:record_type] == :parsed
       record
     end
@@ -254,6 +264,7 @@ Puppet::Type.type(:mount).provide(
 
   def self.mountinstances
     # XXX: Will not work for mount points that have spaces in path (does fstab support this anyways?)
+    #      > it kind of works now                                   > yes it does
     regex = case Facter.value(:osfamily)
             when 'Darwin'
               %r{ on (?:/private/var/automount)?(\S*)}
@@ -262,7 +273,7 @@ Puppet::Type.type(:mount).provide(
             when 'AIX'
               %r{^(?:\S*\s+\S+\s+)(\S+)}
             else
-              %r{ on (\S*)}
+              %r{ on (.*) type }
             end
     instances = []
     mount_output = mountcmd.split("\n")
